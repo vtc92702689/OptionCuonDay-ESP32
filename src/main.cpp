@@ -205,10 +205,7 @@ const char* jsonString = R"({
 
 // Khai báo các nút
 
-const int sensorCount = 17;
-const int sensorFabric = 16;
-const int outRelayCut = 25;
-const int outRelayAir = 26;
+
 
 
 // thêm để commit
@@ -224,6 +221,9 @@ int minValue = 0;
 int maxLength = 0; //Số kí tự hiển thị trên func showSetup
 int columnIndex = 0; // Biến theo dõi hàng hiện tại (0 = đơn vị, 1 = chục, ...)
 int currentValue;
+
+byte trangThaiHoatDong = 0;
+byte mainStep = 0;
 
 OneButton btnMenu(34, false,false);
 OneButton btnSet(35, false,false);
@@ -574,6 +574,18 @@ void btnMenuClick() {
   } else if (displayScreen == "ScreenEdit") {
     loadJsonSettings();
     displayScreen = "ScreenCD";
+  } else if (displayScreen == "khoiDong" && mainStep == 0) {
+    trangThaiHoatDong = 0;
+    showList(menuIndex);  // Hiển thị danh sách menu hiện tại
+    displayScreen = "MENU";
+  } else if (displayScreen == "MENU" && mainStep == 0){
+    displayScreen= "hoatDong";
+    trangThaiHoatDong = 1;
+    showText("Hoat Dong", "Dang Hoat Dong");
+  } else if (displayScreen == "hoatDong" && mainStep == 0) {
+    trangThaiHoatDong = 0;
+    showList(menuIndex);  // Hiển thị danh sách menu hiện tại
+    displayScreen = "MENU";
   }
 }
 
@@ -690,6 +702,143 @@ void btnDownDuringLongPress() {
   //Serial.println("Button is being Long Pressed (btnDown)");
 }
 
+unsigned long thoiDiemCuoiPWM = 0;
+bool trangThaiPWM = false;
+int soXungDaChay = 0;
+
+
+
+// Khai báo thông chân dự án
+const int sensorCilinderXp1 = 17;
+const int sensorCilinderXp2 = 16;
+
+const int sensorCilinderYp1 = 4;
+const int sensorCilinderYp2 = 0;
+
+const int sensorOrigin = 2;
+const int sensorFoot = 15;
+const int sensorActive = 23;
+
+const int outRelayX = 25;
+const int outRelayY = 26;
+const int outRelayFoot = 27;
+const int outRelayRun = 14;
+
+const int pinDir = 1;
+const int pinPWM = 3;
+
+// Thông số cài đặt
+
+byte cheDoHoatDong = 1;
+byte soVongCuon = 2;
+bool chieuQuayDongCo = 1;
+int tocDoQuay = 1000 ;
+int soXungMotor = 100 ;
+unsigned long thoiGianTre = 1000;
+
+// Thông số tính toán
+
+int soXungCanChay = 1000;
+int thoiGianDaoPWM = 50;
+
+// Biến toàn cục
+
+bool trangThaiCuoiCungX1 = false;
+bool trangThaiCuoiCungX2 = false;
+bool trangThaiCuoiCungY1 = false;
+bool trangThaiCuoiCungY2 = false;
+
+bool trangThaiKichChanVit = false;
+bool trangThaiKichMayChay = false;
+
+unsigned long thoiDiemCuoiKichChanVit = 0;
+unsigned long thoiDiemCuoiKichMayChay = 0;
+
+
+void readSensor(){
+
+}
+
+void tinhToanThongSoChay(){
+  soXungCanChay = soXungMotor * soVongCuon;
+  tocDoQuay = ;
+}
+
+void xuatXungPWM(unsigned long thoiGianDao){
+  if (WaitMicros(thoiDiemCuoiPWM,thoiGianDao)){
+    trangThaiPWM = !trangThaiPWM;
+    digitalWrite(pinPWM,trangThaiPWM);
+    thoiDiemCuoiPWM = micros();
+    soXungDaChay ++;
+  }
+}
+
+
+void mainRun(){
+  switch (mainStep){
+  case 0:
+    
+    break;
+  case 1:
+    if (soXungDaChay < soXungCanChay){
+      xuatXungPWM(thoiGianDaoPWM);
+    } else {
+      mainStep ++;
+    }
+    break;
+  case 2:
+    digitalWrite(outRelayY,LOW);
+    if (digitalRead(sensorCilinderYp2)){
+      mainStep++;
+    }
+    break;
+  case 3:
+    if (!trangThaiKichChanVit){
+      digitalWrite(outRelayFoot,HIGH);
+      thoiDiemCuoiKichChanVit = millis();
+      trangThaiKichChanVit = true;
+    } else {
+      if (WaitMillis(thoiDiemCuoiKichChanVit,500)) {
+        digitalWrite(outRelayFoot,LOW);
+        trangThaiKichChanVit = false;
+        mainStep ++;
+      }
+    }
+    break;
+  case 4:
+    if (!trangThaiKichMayChay){
+      digitalWrite(outRelayRun,HIGH);
+      thoiDiemCuoiKichMayChay = millis();
+      trangThaiKichMayChay = true;
+    } else {
+      if (WaitMillis(thoiDiemCuoiKichMayChay,500)) {
+        digitalWrite(outRelayRun,LOW);
+        trangThaiKichMayChay = false;
+        mainStep ++;
+      }
+    }
+    break;
+  case 5:
+    digitalWrite(outRelayX,LOW);
+    if (digitalRead(sensorCilinderXp2)){
+      mainStep++;
+    }
+    break;
+  case 6:
+    digitalWrite(outRelayY,HIGH);
+    if (digitalRead(sensorCilinderYp1)){
+      mainStep++;
+    }
+    break;
+  case 7:
+    digitalWrite(outRelayX,HIGH);
+    if (digitalRead(sensorCilinderXp1)){
+      soXungDaChay = 0;
+      mainStep = 0;
+    }
+    break;
+  }
+}
 
 void setup() {
 
@@ -722,6 +871,22 @@ void setup() {
   btnSet.setPressMs(btnSetPressMill);
   btnUp.setPressMs(btnSetPressMill);
   btnDown.setPressMs(btnSetPressMill);
+
+  pinMode(sensorCilinderXp1,INPUT);
+  pinMode(sensorCilinderXp2,INPUT);
+  pinMode(sensorCilinderYp1,INPUT);
+  pinMode(sensorCilinderYp2,INPUT);
+  pinMode(sensorActive,INPUT);
+  pinMode(sensorFoot,INPUT);
+  pinMode(sensorOrigin,INPUT);
+
+  pinMode(pinDir,OUTPUT);
+  pinMode(pinPWM,OUTPUT);
+  pinMode(outRelayX,OUTPUT);
+  pinMode(outRelayY,OUTPUT);
+  pinMode(outRelayFoot,OUTPUT);
+  pinMode(outRelayRun,OUTPUT);
+
 
   if (!LittleFS.begin()) {
     showSetup("Error", "E003", "LittleFS Mount Failed");
@@ -788,9 +953,23 @@ void setup() {
 }
 
 void loop() {
-  btnMenu.tick();
-  btnSet.tick();
-  btnUp.tick();
-  btnDown.tick(); 
-}
+  switch (trangThaiHoatDong){
+  case 0:
+    btnMenu.tick();
+    btnSet.tick();
+    btnUp.tick();
+    btnDown.tick();
+    break;
+  case 1:
+    btnMenu.tick();
+    
 
+    break;
+  case 2:
+
+    break;
+  default:
+    break;
+  }
+  
+}
