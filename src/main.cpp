@@ -28,7 +28,10 @@ int currentValue;
 
 byte trangThaiHoatDong = 0;
 byte testModeStep = 0;
+byte maxTestModeStep = 0;
 byte mainStep = 0;
+
+byte maxTestOutputStep = 0;
 byte testOutputStep = 0;
 
 OneButton btnMenu(34, false,false);
@@ -41,6 +44,7 @@ OneButton btnEstop(33,false,false);
 bool explanationMode; //logic chức năng diễn giải
 bool editAllowed; //logic chức năng chỉnh sửa
 bool hienThiTestOutput = false;
+bool chayTestMode = false;
 bool daoTinHieuOutput = false;
 
 
@@ -58,6 +62,8 @@ String keyStr;
 String ListExp[10]; // Mảng để chứa các phần chức năng Diễn giải thông số
 
 void reSet();
+void xuatXungPWM(unsigned long thoiGianDao);
+void loadSetup();
 
 void drawCenteredText(const char* text, int y) {
   int screenWidth = u8g2.getDisplayWidth();
@@ -368,8 +374,11 @@ void btnMenuClick() {
     loadJsonSettings();
     displayScreen = "ScreenCD";
     trangThaiHoatDong = 0;
+  } else if (displayScreen == "screenTestMode" && testModeStep == 0){
+    loadJsonSettings();
+    displayScreen = "ScreenCD";
+    trangThaiHoatDong = 0;
   }
-  
 }
 
 // Hàm callback khi bắt đầu nhấn giữ nút
@@ -395,9 +404,10 @@ void btnSetClick() {
     } else if (keyStr == "CN") {
       if (setupCodeStr == "CN1"){
         trangThaiHoatDong = 201;   //Trạng thái hoạt động 201 là trạng thái TestMode
-        columnIndex = 0;
-        showEdit(columnIndex);
-        displayScreen = "ScreenEdit";
+        testModeStep = 0;
+        chayTestMode = true;
+        showText("TEST MODE", String("Step " + String(testModeStep)).c_str());
+        displayScreen = "screenTestMode";
       } else if (setupCodeStr == "CN2"){
         trangThaiHoatDong = 202;   //Trạng thái hoạt động 202 là trạng thái TEST IO INPUT
         showText("TEST I/O", "TEST I/O INPUT");
@@ -430,6 +440,7 @@ void btnSetLongPressStart() {
       jsonDoc["main"]["main" + String(menuIndex)]["children"][setupCodeStr]["configuredValue"] = currentValue;
       log("Đã lưu giá trị:" + String(currentValue) + " vào thẻ " + keyStr + "/" + setupCodeStr);
       loadJsonSettings();
+      loadSetup();
       displayScreen = "ScreenCD";
     } else if (keyStr == "CN"){
       if (setupCodeStr == "CN2"){
@@ -473,8 +484,19 @@ void btnUpClick() {
       log("Value:" + valueStr);
     }
   } else if (displayScreen == "testOutput"){
-    testOutputStep ++;
-    hienThiTestOutput = true;
+    if (testOutputStep == maxTestOutputStep){
+      testOutputStep = 0;
+      hienThiTestOutput = true;
+    } else {
+      testOutputStep ++;
+      hienThiTestOutput = true;
+    }
+  } else if (displayScreen == "screenTestMode"){
+    if (testModeStep < maxTestModeStep){
+      testModeStep ++;
+      chayTestMode = true;
+      showText("TEST MODE", String("Step " + String(testModeStep)).c_str());
+    }
   }
 }
 
@@ -512,8 +534,19 @@ void btnDownClick() {
       log("Value:" + valueStr);
     }
   } else if (displayScreen == "testOutput"){
-    testOutputStep --;
-    hienThiTestOutput = true;
+    if (testOutputStep == 0){
+      testOutputStep = maxTestOutputStep;
+      hienThiTestOutput = true;
+    } else {
+      testOutputStep --;
+      hienThiTestOutput = true;
+    }
+  } else if (displayScreen == "screenTestMode"){
+    if (testModeStep > 0){
+      testModeStep --;
+      chayTestMode = true;
+      showText("TEST MODE", String("Step " + String(testModeStep)).c_str());
+    }
   }
 }
 
@@ -529,23 +562,23 @@ void btnDownDuringLongPress() {
 
 //KHAI BÁO CHÂN IO Ở ĐÂY
 
-const int sensorCilinderXp1 = 17;
+const int sensorCilinderXp1 = 0;
 const int sensorCilinderXp2 = 16;
 
-const int sensorCilinderYp1 = 4;
-const int sensorCilinderYp2 = 0;
+const int sensorCilinderYp1 = 2;
+const int sensorCilinderYp2 = 4;
 
-const int sensorOrigin = 2;
+const int sensorOrigin = 17;
 const int sensorFoot = 15;
-const int sensorActive = 23;
+const int sensorActive = 33;
 
 const int outRelayX = 25;
 const int outRelayY = 26;
 const int outRelayFoot = 27;
 const int outRelayRun = 14;
 
-const int pinDir = 1;
-const int pinPWM = 3;
+const int pinDir = 5;
+const int pinPWM = 18;
 
 
 
@@ -559,7 +592,8 @@ byte soVongCuon = 2;
 bool chieuQuayDongCo = 1;
 int tocDoQuay = 1000 ;
 int soXungMotor = 100 ;
-int thoiGianGiuRole = 200;
+
+int soXungDoGoc = 2000;
 
 // Thông số tính toán
 
@@ -568,11 +602,12 @@ int soLanDaoCanDaoTinHieu = 2000;
 int thoiGianDaoPWM = 50;
 
 // Biến toàn cục
+bool diemGoc = false;
 
 bool trangThaiCuoiCungX1 = false;
 bool trangThaiCuoiCungX2 = false;
 bool trangThaiCuoiCungY1 = false;
-bool trangThaiCuoiCungY2 = false;
+bool trangThaiCuoiCungY2 = true;
 
 bool trangThaiCuoiCungBanDap = false;
 
@@ -583,50 +618,143 @@ unsigned long thoiDiemCuoiKichChanVit = 0;
 unsigned long thoiDiemCuoiKichMayChay = 0;
 
 int soXungDaChay = 0;
+int soVongDaChay = 0;
 
 
 //TRƯƠNG TRÌNH NGƯỜI DÙNG LẬP TRÌNH
 
 
 
+void testMode(){
+  switch (testModeStep){
+    case 0:
+      if (chayTestMode){
+        maxTestModeStep = 7;
+        soXungDaChay = 0;
+        digitalWrite(outRelayX,HIGH);
+        digitalWrite(outRelayY,HIGH);
+        chayTestMode = false;
+      }
+      break;
+    case 1:
+      if(chayTestMode){
+        switch (cheDoHoatDong){
+          case 1:
+            if (soXungDaChay < soXungCanChay){
+              xuatXungPWM(thoiGianDaoPWM);
+            } else if (soXungDaChay == soXungCanChay && digitalRead(sensorOrigin)){
+              digitalWrite(outRelayY,LOW);
+              chayTestMode = false;
+            }
+            break;
+          case 2:
+            if (soXungDaChay < soXungCanChay){
+              xuatXungPWM(thoiGianDaoPWM);
+            } else if (soXungDaChay == soXungCanChay){
+              digitalWrite(outRelayY,LOW);
+              chayTestMode = false;
+            }
+            break;
+          case 3:
+            if (soVongDaChay > soVongCuon){
+              xuatXungPWM(thoiGianDaoPWM);
+              if (digitalRead(sensorOrigin)){
+                soVongDaChay ++;
+              }
+            } else {
+              digitalWrite(outRelayY,LOW);
+              chayTestMode = false;
+            }
+            break;
+          default:
+            showText("ERROR","Loi trong trinh");
+            break;
+        }
+      }
+      break;
+    case 2:
+      if (chayTestMode){
+        digitalWrite(outRelayY,LOW);
+        chayTestMode = false;
+      }
+      break;
+    case 3:
+      if (chayTestMode){
+        digitalWrite(outRelayFoot,HIGH);
+        chayTestMode = false;
+      }
+      break;
+    case 4:
+      if (chayTestMode){
+        digitalWrite(outRelayFoot,LOW);
+        digitalWrite(outRelayX,LOW);
+        chayTestMode = false;
+      }
+      break;
+    case 5:
+      if (chayTestMode){
+        digitalWrite(outRelayRun,HIGH);
+        digitalWrite(outRelayY,HIGH);
+        chayTestMode = false;
+      }
+      break;
+    case 7:
+      if (chayTestMode){
+        digitalWrite(outRelayRun,LOW);
+        digitalWrite(outRelayX,HIGH);
+        chayTestMode = false;
+      }
+      break;
+    default:
+      /* code */
+      break;
+    }
+}
+
 void testInput(){
-  static bool trangthaiCuoiIO1;
+  static bool trangthaiCuoiIO1 = false;
   if (digitalRead(sensorCilinderXp1)!= trangthaiCuoiIO1){
     trangthaiCuoiIO1 = digitalRead(sensorCilinderXp1);
-    showText("IO 17" , String(trangthaiCuoiIO1).c_str());
+    showText("INPUT: 0" , String(trangthaiCuoiIO1).c_str());
   }
   static bool trangthaiCuoiIO2;
   if (digitalRead(sensorCilinderXp2)!= trangthaiCuoiIO2){
     trangthaiCuoiIO2 = digitalRead(sensorCilinderXp2);
-    showText("IO 16" , String(trangthaiCuoiIO2).c_str());
+    showText("INPUT: 16" , String(trangthaiCuoiIO2).c_str());
   }
-  static bool trangthaiCuoiIO3;
+  static bool trangthaiCuoiIO3 = false;
   if (digitalRead(sensorCilinderYp1)!= trangthaiCuoiIO3){
     trangthaiCuoiIO3 = digitalRead(sensorCilinderYp1);
-    showText("IO 04" , String(trangthaiCuoiIO3).c_str());
+    showText("INPUT: 02" , String(trangthaiCuoiIO3).c_str());
   }
   static bool trangthaiCuoiIO4;
   if (digitalRead(sensorCilinderYp2)!= trangthaiCuoiIO4){
     trangthaiCuoiIO4 = digitalRead(sensorCilinderYp2);
-    showText("IO 00" , String(trangthaiCuoiIO4).c_str());
+    showText("INPUT: 04" , String(trangthaiCuoiIO4).c_str());
   }
   static bool trangthaiCuoiIO5;
   if (digitalRead(sensorOrigin)!= trangthaiCuoiIO5){
     trangthaiCuoiIO5 = digitalRead(sensorOrigin);
-    showText("IO 02" , String(trangthaiCuoiIO5).c_str());
+    showText("INPUT: 17" , String(trangthaiCuoiIO5).c_str());
   }
   static bool trangthaiCuoiIO6;
   if (digitalRead(sensorFoot)!= trangthaiCuoiIO6){
     trangthaiCuoiIO6 = digitalRead(sensorFoot);
-    showText("IO 15" , String(trangthaiCuoiIO6).c_str());
+    showText("INPUT: 15" , String(trangthaiCuoiIO6).c_str());
+  }
+  static bool trangthaiCuoiIO7;
+  if (digitalRead(sensorActive)!= trangthaiCuoiIO7){
+    trangthaiCuoiIO7 = digitalRead(sensorActive);
+    showText("INPUT: 33" , String(trangthaiCuoiIO7).c_str());
   }
 }
 void testOutput(){
   switch (testOutputStep){
     case 0:
       if (hienThiTestOutput){
+        maxTestOutputStep = 5;
         bool tinHieuHienTai = digitalRead(outRelayX);
-        showText("IO 25", String(tinHieuHienTai).c_str());
+        showText("1.OUTPUT: 25", String(tinHieuHienTai).c_str());
         hienThiTestOutput = false;
       } else if (daoTinHieuOutput){
         bool tinHieuHienTai = digitalRead(outRelayX);
@@ -638,7 +766,7 @@ void testOutput(){
     case 1:
       if (hienThiTestOutput){
         bool tinHieuHienTai = digitalRead(outRelayY);
-        showText("IO 26", String(tinHieuHienTai).c_str());
+        showText("2.OUTPUT: 26", String(tinHieuHienTai).c_str());
         hienThiTestOutput = false;
       } else if (daoTinHieuOutput){
         bool tinHieuHienTai = digitalRead(outRelayY);
@@ -650,7 +778,7 @@ void testOutput(){
     case 2:
       if (hienThiTestOutput){
         bool tinHieuHienTai = digitalRead(outRelayFoot);
-        showText("IO 27", String(tinHieuHienTai).c_str());
+        showText("3.OUTPUT: 27", String(tinHieuHienTai).c_str());
         hienThiTestOutput = false;
       } else if (daoTinHieuOutput){
         bool tinHieuHienTai = digitalRead(outRelayFoot);
@@ -662,7 +790,7 @@ void testOutput(){
     case 3:
       if (hienThiTestOutput){
         bool tinHieuHienTai = digitalRead(outRelayRun);
-        showText("IO 14", String(tinHieuHienTai).c_str());
+        showText("4.OUTPUT: 14", String(tinHieuHienTai).c_str());
         hienThiTestOutput = false;
       } else if (daoTinHieuOutput){
         bool tinHieuHienTai = digitalRead(outRelayRun);
@@ -671,32 +799,69 @@ void testOutput(){
         daoTinHieuOutput = false;
       }
       break;
+    case 4:
+      if (hienThiTestOutput){
+        bool tinHieuHienTai = digitalRead(pinDir);
+        showText("5.OUTPUT: 5", String(tinHieuHienTai).c_str());
+        hienThiTestOutput = false;
+      } else if (daoTinHieuOutput){
+        bool tinHieuHienTai = digitalRead(pinDir);
+        digitalWrite(pinDir,!tinHieuHienTai);
+        hienThiTestOutput = true;
+        daoTinHieuOutput = false;
+      }
+      break;
+    case 5:
+      if (hienThiTestOutput){
+        bool tinHieuHienTai = digitalRead(pinPWM);
+        showText("6.OUTPUT: 18", String(tinHieuHienTai).c_str());
+        hienThiTestOutput = false;
+      } else if (daoTinHieuOutput){
+        bool tinHieuHienTai = digitalRead(pinPWM);
+        digitalWrite(pinPWM,!tinHieuHienTai);
+        hienThiTestOutput = true;
+        daoTinHieuOutput = false;
+      }
+      break;
     default:
-      testOutputStep = 3;
       break;
   }
 }
 
+void veGoc() {
+  if (digitalRead(sensorFoot)){
+    showText("HELLO","ESP32 VE GOC");
+    for (size_t i = 0; i < soXungDoGoc; i++){
+      xuatXungPWM(thoiGianDaoPWM);
+      if (digitalRead(sensorOrigin)){
+        trangThaiHoatDong = 199;
+        return;
+      }
+    }
+    trangThaiHoatDong = 200;
+    showSetup("ERROR","008","Khong tim thay goc");
+  }
+}
 
 void tinhToanCaiDat(){
   soXungCanChay = soXungMotor * soVongCuon;
   thoiGianDaoPWM = (1000000*30)/(tocDoQuay*soXungMotor);
   digitalWrite(pinDir,chieuQuayDongCo);
-  trangThaiHoatDong = 1;
 }
+
+
 void reSet(){
    
 }
 
 void loadSetup(){
-  byte cheDoHoatDong = jsonDoc["main"]["main1"]["children"]["CD1"]["configuredValue"];
-  byte soVongCuon = jsonDoc["main"]["main1"]["children"]["CD2"]["configuredValue"];
-  bool chieuQuayDongCo = jsonDoc["main"]["main1"]["children"]["CD3"]["configuredValue"];
-  int tocDoQuay = jsonDoc["main"]["main1"]["children"]["CD4"]["configuredValue"] ;
-  int soXungMotor = jsonDoc["main"]["main1"]["children"]["CD5"]["configuredValue"] ;
-  int thoiGianGiuRole = jsonDoc["main"]["main1"]["children"]["CD6"]["configuredValue"];
+  cheDoHoatDong = jsonDoc["main"]["main1"]["children"]["CD1"]["configuredValue"];
+  soVongCuon = jsonDoc["main"]["main1"]["children"]["CD2"]["configuredValue"];
+  chieuQuayDongCo = jsonDoc["main"]["main1"]["children"]["CD3"]["configuredValue"];
+  tocDoQuay = jsonDoc["main"]["main1"]["children"]["CD4"]["configuredValue"] ;
+  soXungMotor = jsonDoc["main"]["main1"]["children"]["CD5"]["configuredValue"] ;
   tinhToanCaiDat();
-  trangThaiHoatDong = 1;
+
 }
 
 void khoiDong(){
@@ -705,14 +870,15 @@ void khoiDong(){
   mainStep = 0;
   trangThaiHoatDong = 0;
   loadSetup();
+  veGoc();
 }
 
 void xuatXungPWM(unsigned long thoiGianDao){
-  if (WaitMicros(thoiDiemCuoiPWM,thoiGianDao && !trangThaiPWM)){
+  if (WaitMicros(thoiDiemCuoiPWM,thoiGianDao) && !trangThaiPWM){
     trangThaiPWM = !trangThaiPWM;
     digitalWrite(pinPWM,trangThaiPWM);
     thoiDiemCuoiPWM = micros();
-  } else if (WaitMicros(thoiDiemCuoiPWM,thoiGianDao && trangThaiPWM)){
+  } else if (WaitMicros(thoiDiemCuoiPWM,thoiGianDao) && trangThaiPWM){
     trangThaiPWM = !trangThaiPWM;
     digitalWrite(pinPWM,trangThaiPWM);
     thoiDiemCuoiPWM = micros();
@@ -726,60 +892,73 @@ void mainRun(){
     
     break;
   case 1:
-    if (soXungDaChay < soXungCanChay){
-      xuatXungPWM(thoiGianDaoPWM);
-    } else {
-      mainStep ++;
+    switch (cheDoHoatDong){
+    case 1:
+      if (soXungDaChay < soXungCanChay){
+        xuatXungPWM(thoiGianDaoPWM);
+      } else if (soXungDaChay == soXungCanChay && digitalRead(sensorOrigin)){
+        digitalWrite(outRelayY,LOW);
+        mainStep ++;
+      }
+      break;
+    case 2:
+      if (soXungDaChay < soXungCanChay){
+        xuatXungPWM(thoiGianDaoPWM);
+      } else if (soXungDaChay == soXungCanChay){
+        digitalWrite(outRelayY,LOW);
+        mainStep ++;
+      }
+      break;
+    case 3:
+      if (soVongDaChay > soVongCuon){
+        xuatXungPWM(thoiGianDaoPWM);
+        if (digitalRead(sensorOrigin)){
+          soVongDaChay ++;
+        }
+      } else {
+        digitalWrite(outRelayY,LOW);
+        mainStep ++;
+      }
+      break;
+    default:
+      showText("ERROR","Loi trong trinh");
+      break;
     }
     break;
   case 2:
-    digitalWrite(outRelayY,LOW);
-    if (digitalRead(sensorCilinderYp2)){
+    if (!digitalRead(sensorCilinderYp2)){
+      digitalWrite(outRelayFoot,HIGH);
+      trangThaiKichChanVit = true;
       mainStep++;
     }
     break;
   case 3:
-    if (!trangThaiKichChanVit){
-      digitalWrite(outRelayFoot,HIGH);
-      thoiDiemCuoiKichChanVit = millis();
-      trangThaiKichChanVit = true;
-    } else {
-      if (WaitMillis(thoiDiemCuoiKichChanVit,thoiGianGiuRole)) {
-        digitalWrite(outRelayFoot,LOW);
-        trangThaiKichChanVit = false;
-        mainStep ++;
-      }
+    if (digitalRead(sensorFoot)){
+      digitalWrite(outRelayFoot,LOW);
+      trangThaiKichChanVit = false;
+      digitalWrite(outRelayX,LOW);
+      mainStep ++;
     }
     break;
   case 4:
-    if (!trangThaiKichMayChay) {
+    if (digitalRead(sensorCilinderXp2)) {
       digitalWrite(outRelayRun,HIGH);
-      thoiDiemCuoiKichMayChay = millis();
+      digitalWrite(outRelayY,HIGH);
       trangThaiKichMayChay = true;
-    } else {
-      if (WaitMillis(thoiDiemCuoiKichMayChay,thoiGianGiuRole)){
-        digitalWrite(outRelayRun,LOW);
-        trangThaiKichMayChay = false;
-        mainStep ++;
-      }
-    }
+      mainStep ++;
+    } 
     break;
   case 5:
-    digitalWrite(outRelayX,LOW);
-    if (digitalRead(sensorCilinderXp2)){
+    if (!digitalRead(sensorCilinderYp1)){
+      digitalWrite(outRelayRun,LOW);
+      digitalWrite(outRelayX,HIGH);
       mainStep++;
     }
     break;
   case 6:
-    digitalWrite(outRelayY,HIGH);
-    if (digitalRead(sensorCilinderYp1)){
-      mainStep++;
-    }
-    break;
-  case 7:
-    digitalWrite(outRelayX,HIGH);
-    if (digitalRead(sensorCilinderXp1)){
+    if (digitalRead(!sensorCilinderXp1)){
       soXungDaChay = 0;
+      soVongDaChay = 0;
       trangThaiHoatDong = 1;
       mainStep = 0;
     }
@@ -788,8 +967,6 @@ void mainRun(){
     break;
   }
 }
-
-
 
 void setup() {
 
@@ -882,8 +1059,9 @@ void loop() {
     // Đảm bảo rằng sensorActive đã được định nghĩa đúng
     bool trangThaiBanDap = digitalRead(sensorActive);
     if (trangThaiCuoiCungBanDap != trangThaiBanDap) {
-      if (trangThaiBanDap) {
-        trangThaiHoatDong++;
+      if (trangThaiBanDap && mainStep == 0) {
+        mainStep ++;
+        trangThaiHoatDong ++;
       }
       trangThaiCuoiCungBanDap = trangThaiBanDap;
     }
@@ -892,9 +1070,21 @@ void loop() {
   case 2:
     mainRun();
     break;
+  case 199:
+    if (!digitalRead(sensorFoot)){
+      digitalWrite(outRelayRun,LOW);
+      showText("HELLO","ESP32-READY");
+      diemGoc = true;
+      trangThaiHoatDong = 1;
+    }
+    break;
   case 200:
     break;
   case 201:
+    btnMenu.tick();
+    btnUp.tick();
+    btnDown.tick();
+    testMode();
     break;
   case 202:
     btnMenu.tick();

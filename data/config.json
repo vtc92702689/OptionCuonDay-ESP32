@@ -1,145 +1,145 @@
 {
-    "main": {
-      "main1": {
-        "text": "CAI DAT",
-        "key": "CD",
-        "children": {
-          "CD1": {
-            "key": "CD1",
-            "text": "Che do HD",
-            "defaultValue": 1,
-            "configuredValue": 1,
-            "minValue": 1,
-            "maxValue": 2,
-            "accessAllowed": true,
-            "editAllowed": true,
-            "explanationMode": true,
-            "explanationDetails": "SenSor & Step,Step,Sensor"
-          },
-          "CD2": {
-            "key": "CD2",
-            "text": "So vong cuon",
-            "defaultValue": 2,
-            "configuredValue": 2,
-            "minValue": 1,
-            "maxValue": 4,
-            "accessAllowed": true,
-            "editAllowed": true,
-            "explanationMode": false,
-            "explanationDetails": ""
-          },
-          "CD3": {
-            "key": "CD3",
-            "text": "Chieu Quay",
-            "defaultValue": 1,
-            "configuredValue": 1,
-            "minValue": 0,
-            "maxValue": 1,
-            "accessAllowed": true,
-            "editAllowed": true,
-            "explanationMode": false,
-            "explanationDetails": ""
-          },
-          "CD4": {
-            "key": "CD4",
-            "text": "Toc Do",
-            "defaultValue": 1000,
-            "configuredValue": 1000,
-            "minValue": 100,
-            "maxValue": 2000,
-            "accessAllowed": true,
-            "editAllowed": true,
-            "explanationMode": false,
-            "explanationDetails": ""
-          },
-          "CD5": {
-            "key": "CD5",
-            "text": "So Xung Dong Co",
-            "defaultValue": 200,
-            "configuredValue": 200,
-            "minValue": 50,
-            "maxValue": 500,
-            "accessAllowed": true,
-            "editAllowed": true,
-            "explanationMode": false,
-            "explanationDetails": ""
-          },
-          "CD6": {
-            "key": "CD6",
-            "text": "Thoi Gian Giu Role",
-            "defaultValue": 150,
-            "configuredValue": 150,
-            "minValue": 10,
-            "maxValue": 5000,
-            "accessAllowed": true,
-            "editAllowed": true,
-            "explanationMode": false,
-            "explanationDetails": ""
-          }
+  "main": {
+    "main1": {
+      "text": "CAI DAT",
+      "key": "CD",
+      "children": {
+        "CD1": {
+          "key": "CD1",
+          "text": "Che do HD",
+          "defaultValue": 1,
+          "configuredValue": 1,
+          "minValue": 1,
+          "maxValue": 3,
+          "accessAllowed": true,
+          "editAllowed": true,
+          "explanationMode": true,
+          "explanationDetails": "SenSor & Step,Step,Sensor"
         },
-        "totalChildren": 6
+        "CD2": {
+          "key": "CD2",
+          "text": "So vong cuon",
+          "defaultValue": 2,
+          "configuredValue": 2,
+          "minValue": 1,
+          "maxValue": 4,
+          "accessAllowed": true,
+          "editAllowed": true,
+          "explanationMode": false,
+          "explanationDetails": ""
+        },
+        "CD3": {
+          "key": "CD3",
+          "text": "Chieu Quay",
+          "defaultValue": 1,
+          "configuredValue": 1,
+          "minValue": 0,
+          "maxValue": 1,
+          "accessAllowed": true,
+          "editAllowed": true,
+          "explanationMode": false,
+          "explanationDetails": ""
+        },
+        "CD4": {
+          "key": "CD4",
+          "text": "Toc Do",
+          "defaultValue": 1000,
+          "configuredValue": 1000,
+          "minValue": 100,
+          "maxValue": 2000,
+          "accessAllowed": true,
+          "editAllowed": true,
+          "explanationMode": false,
+          "explanationDetails": ""
+        },
+        "CD5": {
+          "key": "CD5",
+          "text": "So Xung Dong Co",
+          "defaultValue": 200,
+          "configuredValue": 200,
+          "minValue": 50,
+          "maxValue": 500,
+          "accessAllowed": true,
+          "editAllowed": true,
+          "explanationMode": false,
+          "explanationDetails": ""
+        }
       },
-      "main2": {
-        "text": "CHUC NANG",
-        "key": "CN",
-        "children": {
-          "CN2": {
-            "key": "CN2",
-            "text": "TEST INPUT",
-            "defaultValue": 0,
-            "configuredValue": 0,
-            "minValue": 0,
-            "maxValue": 0,
-            "accessAllowed": true,
-            "editAllowed": true,
-            "explanationMode": false,
-            "explanationDetails": ""
-          },
-          "CN3": {
-            "key": "CN3",
-            "text": "TEST OUTPUT",
-            "defaultValue": 0,
-            "configuredValue": 0,
-            "minValue": 0,
-            "maxValue": 0,
-            "accessAllowed": true,
-            "editAllowed": true,
-            "explanationMode": false,
-            "explanationDetails": ""
-          },
-          "CN4": {
-            "key": "CN4",
-            "text": "RESET",
-            "defaultValue": 0,
-            "configuredValue": 0,
-            "minValue": 0,
-            "maxValue": 1,
-            "accessAllowed": true,
-            "editAllowed": true,
-            "explanationMode": false,
-            "explanationDetails": ""
-          }
+      "totalChildren": 5
+    },
+    "main2": {
+      "text": "CHUC NANG",
+      "key": "CN",
+      "children": {
+        "CN1": {
+          "key": "CN1",
+          "text": "TEST MODE",
+          "defaultValue": 1,
+          "configuredValue": 1,
+          "minValue": 1,
+          "maxValue": 1,
+          "accessAllowed": true,
+          "editAllowed": true,
+          "explanationMode": false,
+          "explanationDetails": ""
         },
-        "totalChildren": 3
+        "CN2": {
+          "key": "CN2",
+          "text": "TEST INPUT",
+          "defaultValue": 0,
+          "configuredValue": 0,
+          "minValue": 0,
+          "maxValue": 0,
+          "accessAllowed": true,
+          "editAllowed": true,
+          "explanationMode": false,
+          "explanationDetails": ""
+        },
+        "CN3": {
+          "key": "CN3",
+          "text": "TEST OUTPUT",
+          "defaultValue": 0,
+          "configuredValue": 0,
+          "minValue": 0,
+          "maxValue": 0,
+          "accessAllowed": true,
+          "editAllowed": true,
+          "explanationMode": false,
+          "explanationDetails": ""
+        },
+        "CN4": {
+          "key": "CN4",
+          "text": "RESET",
+          "defaultValue": 0,
+          "configuredValue": 0,
+          "minValue": 0,
+          "maxValue": 1,
+          "accessAllowed": true,
+          "editAllowed": true,
+          "explanationMode": false,
+          "explanationDetails": ""
+        }
       },
-      "main3": {
-        "text": "GIOI THIEU",
-        "key": "GT",
-        "children": {
-          "GT1": {
-            "key": "GT1",
-            "text": "DKien Design",
-            "defaultValue": 1,
-            "configuredValue": 1,
-            "minValue": 1,
-            "maxValue": 1,
-            "accessAllowed": true,
-            "editAllowed": true,
-            "explanationMode": false,
-            "explanationDetails": ""
-          }
-        },
-        "totalChildren": 1
-      }
+      "totalChildren": 4
+    },
+    "main3": {
+      "text": "GIOI THIEU",
+      "key": "GT",
+      "children": {
+        "GT1": {
+          "key": "GT1",
+          "text": "DKien Design",
+          "defaultValue": 1,
+          "configuredValue": 1,
+          "minValue": 1,
+          "maxValue": 1,
+          "accessAllowed": true,
+          "editAllowed": true,
+          "explanationMode": false,
+          "explanationDetails": ""
+        }
+      },
+      "totalChildren": 1
     }
   }
+}
