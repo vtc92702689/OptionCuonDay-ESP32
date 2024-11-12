@@ -13,7 +13,6 @@ StaticJsonDocument<200> jsonDoc;
 
 const char* jsonString = R"()";
 
-// Khai báo các nút
 
 int btnSetDebounceMill = 20;  // thời gian chống nhiễu phím
 int btnSetPressMill = 1000;  // thời gian nhấn giữ phím
@@ -25,6 +24,7 @@ int minValue = 0;
 int maxLength = 0; //Số kí tự hiển thị trên func showSetup
 int columnIndex = 0; // Biến theo dõi hàng hiện tại (0 = đơn vị, 1 = chục, ...)
 int currentValue;
+int timeOut = 7000;
 
 byte trangThaiHoatDong = 0;
 byte testModeStep = 0;
@@ -33,6 +33,8 @@ byte mainStep = 0;
 
 byte maxTestOutputStep = 0;
 byte testOutputStep = 0;
+
+// Khai báo các nút
 
 OneButton btnMenu(34, false,false);
 OneButton btnSet(35, false,false);
@@ -46,6 +48,7 @@ bool editAllowed; //logic chức năng chỉnh sửa
 bool hienThiTestOutput = false;
 bool chayTestMode = false;
 bool daoTinHieuOutput = false;
+bool trangThaiCuoiCungOrigin = false;
 
 
 const char* menu1;
@@ -60,6 +63,8 @@ String textExplanationMode;
 String textStr;
 String keyStr;
 String ListExp[10]; // Mảng để chứa các phần chức năng Diễn giải thông số
+
+unsigned long lastTimeOut = 0;
 
 void reSet();
 void xuatXungPWM(unsigned long thoiGianDao);
@@ -494,9 +499,11 @@ void btnUpClick() {
   } else if (displayScreen == "screenTestMode"){
     if (testModeStep < maxTestModeStep){
       testModeStep ++;
-      chayTestMode = true;
-      showText("TEST MODE", String("Step " + String(testModeStep)).c_str());
+    } else {
+      testModeStep = 0;
     }
+    chayTestMode = true;
+    showText("TEST MODE", String("Step " + String(testModeStep)).c_str());
   }
 }
 
@@ -631,6 +638,7 @@ void testMode(){
       if (chayTestMode){
         maxTestModeStep = 7;
         soXungDaChay = 0;
+        soVongDaChay = 0;
         digitalWrite(outRelayX,HIGH);
         digitalWrite(outRelayY,HIGH);
         chayTestMode = false;
@@ -643,7 +651,10 @@ void testMode(){
             if (soXungDaChay < soXungCanChay){
               xuatXungPWM(thoiGianDaoPWM);
             } else if (soXungDaChay == soXungCanChay && digitalRead(sensorOrigin)){
-              digitalWrite(outRelayY,LOW);
+              digitalWrite(outRelayX,HIGH);
+              digitalWrite(outRelayY,HIGH);
+              digitalWrite(outRelayFoot,LOW);
+              digitalWrite(outRelayRun,LOW);
               chayTestMode = false;
             }
             break;
@@ -651,18 +662,24 @@ void testMode(){
             if (soXungDaChay < soXungCanChay){
               xuatXungPWM(thoiGianDaoPWM);
             } else if (soXungDaChay == soXungCanChay){
-              digitalWrite(outRelayY,LOW);
+              digitalWrite(outRelayX,HIGH);
+              digitalWrite(outRelayY,HIGH);
+              digitalWrite(outRelayFoot,LOW);
+              digitalWrite(outRelayRun,LOW);
               chayTestMode = false;
             }
             break;
           case 3:
-            if (soVongDaChay > soVongCuon){
+            if (soVongDaChay < soVongCuon){
               xuatXungPWM(thoiGianDaoPWM);
               if (digitalRead(sensorOrigin)){
                 soVongDaChay ++;
               }
             } else {
-              digitalWrite(outRelayY,LOW);
+              digitalWrite(outRelayX,HIGH);
+              digitalWrite(outRelayY,HIGH);
+              digitalWrite(outRelayFoot,LOW);
+              digitalWrite(outRelayRun,LOW);
               chayTestMode = false;
             }
             break;
@@ -674,34 +691,46 @@ void testMode(){
       break;
     case 2:
       if (chayTestMode){
+        digitalWrite(outRelayX,HIGH);
         digitalWrite(outRelayY,LOW);
+        digitalWrite(outRelayFoot,LOW);
+        digitalWrite(outRelayRun,LOW);
         chayTestMode = false;
       }
       break;
     case 3:
       if (chayTestMode){
+        digitalWrite(outRelayX,HIGH);
+        digitalWrite(outRelayY,LOW);
         digitalWrite(outRelayFoot,HIGH);
+        digitalWrite(outRelayRun,LOW);
         chayTestMode = false;
       }
       break;
     case 4:
       if (chayTestMode){
-        digitalWrite(outRelayFoot,LOW);
         digitalWrite(outRelayX,LOW);
+        digitalWrite(outRelayY,LOW);
+        digitalWrite(outRelayFoot,LOW);
+        digitalWrite(outRelayRun,LOW);
         chayTestMode = false;
       }
       break;
     case 5:
       if (chayTestMode){
-        digitalWrite(outRelayRun,HIGH);
+        digitalWrite(outRelayX,LOW);
         digitalWrite(outRelayY,HIGH);
+        digitalWrite(outRelayFoot,LOW);
+        digitalWrite(outRelayRun,HIGH);
         chayTestMode = false;
       }
       break;
     case 7:
       if (chayTestMode){
-        digitalWrite(outRelayRun,LOW);
         digitalWrite(outRelayX,HIGH);
+        digitalWrite(outRelayY,HIGH);
+        digitalWrite(outRelayFoot,LOW);
+        digitalWrite(outRelayRun,LOW);
         chayTestMode = false;
       }
       break;
@@ -828,21 +857,6 @@ void testOutput(){
   }
 }
 
-void veGoc() {
-  if (digitalRead(sensorFoot)){
-    showText("HELLO","ESP32 VE GOC");
-    for (size_t i = 0; i < soXungDoGoc; i++){
-      xuatXungPWM(thoiGianDaoPWM);
-      if (digitalRead(sensorOrigin)){
-        trangThaiHoatDong = 199;
-        return;
-      }
-    }
-    trangThaiHoatDong = 200;
-    showSetup("ERROR","008","Khong tim thay goc");
-  }
-}
-
 void tinhToanCaiDat(){
   soXungCanChay = soXungMotor * soVongCuon;
   thoiGianDaoPWM = (1000000*30)/(tocDoQuay*soXungMotor);
@@ -861,7 +875,11 @@ void loadSetup(){
   tocDoQuay = jsonDoc["main"]["main1"]["children"]["CD4"]["configuredValue"] ;
   soXungMotor = jsonDoc["main"]["main1"]["children"]["CD5"]["configuredValue"] ;
   tinhToanCaiDat();
-
+  if(digitalRead(sensorFoot) && !diemGoc){
+    digitalWrite(outRelayRun,LOW);
+    showText("HELLO","ESP32 VE GOC");
+    trangThaiHoatDong = 199;
+  }
 }
 
 void khoiDong(){
@@ -870,7 +888,6 @@ void khoiDong(){
   mainStep = 0;
   trangThaiHoatDong = 0;
   loadSetup();
-  veGoc();
 }
 
 void xuatXungPWM(unsigned long thoiGianDao){
@@ -897,7 +914,6 @@ void mainRun(){
       if (soXungDaChay < soXungCanChay){
         xuatXungPWM(thoiGianDaoPWM);
       } else if (soXungDaChay == soXungCanChay && digitalRead(sensorOrigin)){
-        digitalWrite(outRelayY,LOW);
         mainStep ++;
       }
       break;
@@ -905,18 +921,20 @@ void mainRun(){
       if (soXungDaChay < soXungCanChay){
         xuatXungPWM(thoiGianDaoPWM);
       } else if (soXungDaChay == soXungCanChay){
-        digitalWrite(outRelayY,LOW);
         mainStep ++;
       }
       break;
     case 3:
-      if (soVongDaChay > soVongCuon){
+      if (soVongDaChay < soVongCuon){
         xuatXungPWM(thoiGianDaoPWM);
-        if (digitalRead(sensorOrigin)){
-          soVongDaChay ++;
+        bool trangThaiHienTaiOrigin = digitalRead(sensorOrigin);
+        if (trangThaiCuoiCungOrigin != trangThaiHienTaiOrigin){
+          if (trangThaiHienTaiOrigin){
+            soVongDaChay ++;
+          }
+          trangThaiCuoiCungOrigin = trangThaiHienTaiOrigin;
         }
       } else {
-        digitalWrite(outRelayY,LOW);
         mainStep ++;
       }
       break;
@@ -926,13 +944,19 @@ void mainRun(){
     }
     break;
   case 2:
-    if (!digitalRead(sensorCilinderYp2)){
+    if (!digitalRead(sensorCilinderXp1)){
+      digitalWrite(outRelayY,LOW);
+      mainStep++;
+    }
+    break;
+  case 3:
+    if (digitalRead(sensorCilinderYp2)){
       digitalWrite(outRelayFoot,HIGH);
       trangThaiKichChanVit = true;
       mainStep++;
     }
     break;
-  case 3:
+  case 4:
     if (digitalRead(sensorFoot)){
       digitalWrite(outRelayFoot,LOW);
       trangThaiKichChanVit = false;
@@ -940,7 +964,7 @@ void mainRun(){
       mainStep ++;
     }
     break;
-  case 4:
+  case 5:
     if (digitalRead(sensorCilinderXp2)) {
       digitalWrite(outRelayRun,HIGH);
       digitalWrite(outRelayY,HIGH);
@@ -948,14 +972,14 @@ void mainRun(){
       mainStep ++;
     } 
     break;
-  case 5:
+  case 6:
     if (!digitalRead(sensorCilinderYp1)){
       digitalWrite(outRelayRun,LOW);
       digitalWrite(outRelayX,HIGH);
       mainStep++;
     }
     break;
-  case 6:
+  case 7:
     if (digitalRead(!sensorCilinderXp1)){
       soXungDaChay = 0;
       soVongDaChay = 0;
@@ -1070,15 +1094,84 @@ void loop() {
   case 2:
     mainRun();
     break;
-  case 199:
-    if (!digitalRead(sensorFoot)){
-      digitalWrite(outRelayRun,LOW);
-      showText("HELLO","ESP32-READY");
-      diemGoc = true;
-      trangThaiHoatDong = 1;
-    }
-    break;
+  case 199:{
+    static int buocVeGoc = 0;
+    switch (buocVeGoc){
+      case 0:
+        if(!digitalRead(sensorOrigin)){
+          xuatXungPWM(thoiGianDaoPWM);
+        } else {
+          soXungDaChay = 0;
+          lastTimeOut = millis();
+          buocVeGoc ++;
+        }
+        if (soXungDaChay > soXungDoGoc){
+          trangThaiHoatDong = 200;
+          showSetup("ERROR","E008","Khong tim thay goc");
+        }
+        break;
+      case 1:
+        if(WaitMillis(lastTimeOut,5500)){
+          if (digitalRead(sensorFoot)){
+            digitalWrite(outRelayRun,HIGH);
+            buocVeGoc ++;
+          } else {
+            buocVeGoc ++;
+          }
+          lastTimeOut = millis();
+        }
+        break;
+      case 2:
+        if (!digitalRead(sensorFoot)){
+          digitalWrite(outRelayRun,LOW);
+          lastTimeOut = millis();
+          buocVeGoc ++;
+        } else {
+          if(WaitMillis(lastTimeOut,timeOut)){
+            trangThaiHoatDong = 200;
+            showSetup("ERROR","E009","K.Tra C.bien chan vit");
+          }
+        }
+        break;
+      case 3:
+        if (digitalRead(sensorCilinderXp1)){
+          digitalWrite(outRelayY,HIGH);
+          lastTimeOut = millis();
+          buocVeGoc++;
+        } else {
+          if(WaitMillis(lastTimeOut,timeOut)){
+            trangThaiHoatDong = 200;
+            showSetup("ERROR","E010","Kiem tra cylinder X");
+          }
+        }
+        break;
+      case 4:
+        if (!digitalRead(sensorCilinderYp1)){
+          digitalWrite(outRelayX,HIGH);
+          lastTimeOut = millis();
+          buocVeGoc++;
+        } else {
+          if(WaitMillis(lastTimeOut,timeOut)){
+            trangThaiHoatDong = 200;
+            showSetup("ERROR","E011","Kiem tra cylinder Y");
+          }
+        }
+        break;
+      case 5:
+        if (!digitalRead(sensorCilinderXp1)){
+          showText("HELLO","ESP32-READY");
+          trangThaiHoatDong = 1;
+        } else {
+          if(WaitMillis(lastTimeOut,timeOut)){
+            trangThaiHoatDong = 200;
+            showSetup("ERROR","E010","Kiem tra cylinder X");
+          }
+        }
+        break;
+      }
+  }
   case 200:
+    btnMenu.tick();
     break;
   case 201:
     btnMenu.tick();
