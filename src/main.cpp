@@ -992,6 +992,7 @@ void mainRun(){
       soVongDaChay = 0;
       trangThaiHoatDong = 1;
       mainStep = 0;
+      delay(500);
     }
     break;
   default:
