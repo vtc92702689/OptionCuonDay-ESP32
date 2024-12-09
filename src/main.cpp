@@ -4,15 +4,20 @@
 #include <OneButton.h>
 #include <LittleFS.h>
 #include "func.h"  // Bao gồm file header func.h để sử dụng các hàm từ func.cpp
+#include "ota.h"
 
 //U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE); // Khởi tạo đối tượng màn hình OLED U8G2
-U8G2_SH1106_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE); // Khởi tạo đối tượng màn hình OLED U8G2
+//U8G2_SH1106_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE); // Khởi tạo đối tượng màn hình OLED U8G2
+
+// Thông tin mạng WiFi và OTA
+
 
 
 StaticJsonDocument<200> jsonDoc;
 
 const char* jsonString = R"()";
 
+// Khai báo các nút
 
 int btnSetDebounceMill = 20;  // thời gian chống nhiễu phím
 int btnSetPressMill = 1000;  // thời gian nhấn giữ phím
@@ -27,14 +32,12 @@ int currentValue;
 int timeOut = 7000;
 
 byte trangThaiHoatDong = 0;
+byte mainStep = 0;
 byte testModeStep = 0;
 byte maxTestModeStep = 0;
-byte mainStep = 0;
 
-byte maxTestOutputStep = 0;
 byte testOutputStep = 0;
-
-// Khai báo các nút
+byte maxTestOutputStep = 0;
 
 OneButton btnMenu(34, false,false);
 OneButton btnSet(35, false,false);
@@ -46,8 +49,8 @@ OneButton btnEstop(33,false,false);
 bool explanationMode; //logic chức năng diễn giải
 bool editAllowed; //logic chức năng chỉnh sửa
 bool hienThiTestOutput = false;
-bool chayTestMode = false;
 bool daoTinHieuOutput = false;
+bool chayTestMode = false;
 bool trangThaiCuoiCungOrigin = false;
 
 
@@ -352,7 +355,6 @@ void readConfigFile() {
   config.close();
 }
 
-
 void reSet(){
   int totalPrmReSet = jsonDoc["main"]["main1"]["totalChildren"]; // Truy xuất tổng số lượng phần tử con mảng CD
   for (size_t i = 0; i < totalPrmReSet; i++){
@@ -393,14 +395,16 @@ void btnMenuClick() {
     loadJsonSettings();
     displayScreen = "ScreenCD";
     trangThaiHoatDong = 0;
+  } else if (displayScreen == "OTA"){
+
   }
 }
 
 // Hàm callback khi bắt đầu nhấn giữ nút
 void btnMenuLongPressStart() {
-  //Serial.println("Button Long Press Started (BtnMenu)");
+  if (displayScreen == "OTA") {
+  }
 }
-
 // Hàm callback khi nút đang được giữ
 void btnMenuDuringLongPress() {
   //Serial.println("Button is being Long Pressed (BtnMenu)");
@@ -432,6 +436,10 @@ void btnSetClick() {
         testOutputStep = 0;
         displayScreen = "testOutput";
         hienThiTestOutput = true;
+      } else if ((setupCodeStr == "CN5")){
+        setupOTA();
+        displayScreen = "OTA";
+        trangThaiHoatDong = 204;  //Trạng thái hoạt động 204 là trạng thái OTA UPDATE+0
       } else {
         columnIndex = maxLength-1;
         showEdit(columnIndex);
@@ -459,8 +467,6 @@ void btnSetLongPressStart() {
       jsonDoc["main"]["main" + String(menuIndex)]["children"][setupCodeStr]["configuredValue"] = currentValue;
       log("Đã lưu giá trị:" + String(currentValue) + " vào thẻ " + keyStr + "/" + setupCodeStr);
       loadJsonSettings();
-      loadSetup();
-      tinhToanCaiDat();
       displayScreen = "ScreenCD";
     } else if (keyStr == "CN"){
       if (setupCodeStr == "CN4" && currentValue == 1){
@@ -579,6 +585,8 @@ void btnDownLongPressStart() {
 void btnDownDuringLongPress() {
   //Serial.println("Button is being Long Pressed (btnDown)");
 }
+
+
 //KHAI BÁO CHÂN IO Ở ĐÂY
 
 const int sensorCilinderXp1 = 0;
@@ -1000,6 +1008,7 @@ void mainRun(){
   }
 }
 
+
 void setup() {
 
   Serial.begin(115200);     // Khởi tạo Serial và màn hình
@@ -1238,6 +1247,9 @@ void loop() {
     btnDown.tick();
     testOutput();
     break;
+  case 204:
+    handleOTA(); // Xử lý OTA khi điều kiện đúng
+    break;  
   default:
     // Xử lý giá trị không mong muốn của trangThaiHoatDong
       trangThaiHoatDong = 0;
